@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using PGS.Azure.Storage.Options;
 
 namespace PGS.Azure.Storage
 {
@@ -22,6 +23,7 @@ namespace PGS.Azure.Storage
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddMvc();
+            services.Configure<AzureStorageOptions>(Configuration.GetSection("AzureStorage"));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

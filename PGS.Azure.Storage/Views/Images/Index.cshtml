@@ -1,1 +1,10 @@
-﻿
+﻿@model string[]
+<h2>Image galery</h2>
+<div class="row">
+    @foreach (string imgUrl in Model)
+    {
+        <div class="col-xs-3">
+            <img width="100%" src="@imgUrl"/>
+        </div>
+    }
+</div>
