@@ -19,7 +19,7 @@ namespace PGS.Azure.Storage.Controllers
         // GET
         public async Task<IActionResult> Index()
         {
-            var account = new CloudStorageAccount(new StorageCredentials(), _azureStorageOptions.AccountName, "core.windows.net", true);
+            var account = new CloudStorageAccount(new StorageCredentials(_azureStorageOptions.AccountName, _azureStorageOptions.AccountKey), "core.windows.net", true);
             CloudBlobClient blobClient = account.CreateCloudBlobClient();
             CloudBlobContainer container = blobClient.GetContainerReference(_azureStorageOptions.BlobContainerName);
             IListBlobItem[] blobs = await GetAllBlobs(container);            
