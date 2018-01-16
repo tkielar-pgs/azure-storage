@@ -24,11 +24,7 @@ namespace PGS.Azure.Storage.Controllers
             CloudBlobClient blobClient = account.CreateCloudBlobClient();
             CloudBlobContainer container = blobClient.GetContainerReference(_azureStorageOptions.BlobContainerName);
             IListBlobItem[] blobs = await GetAllBlobs(container);
-            var sas = container.GetSharedAccessSignature(new SharedAccessBlobPolicy
-            {
-                Permissions = SharedAccessBlobPermissions.Read,
-                SharedAccessExpiryTime = DateTimeOffset.UtcNow.AddHours(1)
-            });
+            var sas = container.GetSharedAccessSignature(new SharedAccessBlobPolicy {SharedAccessExpiryTime = DateTimeOffset.UtcNow.AddHours(1)}, "img-policy");
             string[] imageUrls = blobs.Select(blob => $"{blob.Uri}{sas}").ToArray();
 
             return View(imageUrls);
