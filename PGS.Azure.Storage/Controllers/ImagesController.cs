@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
@@ -19,12 +20,18 @@ namespace PGS.Azure.Storage.Controllers
         // GET
         public async Task<IActionResult> Index()
         {
-            var account = new CloudStorageAccount(new StorageCredentials(_azureStorageOptions.AccountName, _azureStorageOptions.AccountKey), "core.windows.net", true);
+            var account = new CloudStorageAccount(new StorageCredentials(_azureStorageOptions.AccountName, _azureStorageOptions.AccountKey), "core.windows.net", true);            
             CloudBlobClient blobClient = account.CreateCloudBlobClient();
             CloudBlobContainer container = blobClient.GetContainerReference(_azureStorageOptions.BlobContainerName);
-            IListBlobItem[] blobs = await GetAllBlobs(container);            
+            IListBlobItem[] blobs = await GetAllBlobs(container);
+            var sas = container.GetSharedAccessSignature(new SharedAccessBlobPolicy
+            {
+                Permissions = SharedAccessBlobPermissions.Read,
+                SharedAccessExpiryTime = DateTimeOffset.UtcNow.AddHours(1)
+            });
+            string[] imageUrls = blobs.Select(blob => $"{blob.Uri}{sas}").ToArray();
 
-            return View(blobs.Select(blob => blob.Uri.AbsoluteUri).ToArray());
+            return View(imageUrls);
         }
 
         private async Task<IListBlobItem[]> GetAllBlobs(CloudBlobContainer container)
