@@ -24,6 +24,7 @@ namespace PGS.Azure.Storage
         {
             services.AddMvc();
             services.Configure<AzureStorageOptions>(Configuration.GetSection("AzureStorage"));
+            services.Configure<AzureAdOptions>(Configuration.GetSection("AzureAd"));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
