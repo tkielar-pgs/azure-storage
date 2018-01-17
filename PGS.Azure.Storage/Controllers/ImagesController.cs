@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
@@ -7,7 +6,6 @@ using Microsoft.Azure.KeyVault;
 using Microsoft.Azure.KeyVault.Models;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Clients.ActiveDirectory;
-using Microsoft.Rest;
 using Microsoft.WindowsAzure.Storage;
 using Microsoft.WindowsAzure.Storage.Auth;
 using Microsoft.WindowsAzure.Storage.Blob;
@@ -37,14 +35,15 @@ namespace PGS.Azure.Storage.Controllers
                 return result.AccessToken;
             });
 
-            SecretBundle imgSas = await keyVault.GetSecretAsync(
-                _azureStorageOptions.KeyVault.BaseUrl, $"{_azureStorageOptions.AccountName}-{_azureStorageOptions.KeyVault.ImgSasDefinitionName}");
-
-            var account = new CloudStorageAccount(new StorageCredentials(_azureStorageOptions.AccountName, _azureStorageOptions.AccountKey), "core.windows.net", true);            
+            string containerSas = await GetKvSas(keyVault, _azureStorageOptions.KeyVault.ContainerSasDefinitionName);
+            var account = new CloudStorageAccount(new StorageCredentials(containerSas), _azureStorageOptions.AccountName, "core.windows.net", true);       
+            
             CloudBlobClient blobClient = account.CreateCloudBlobClient();
             CloudBlobContainer container = blobClient.GetContainerReference(_azureStorageOptions.BlobContainerName);
             IListBlobItem[] blobs = await GetAllBlobs(container);
-            string[] imageUrls = blobs.Select(blob => $"{blob.Uri}{imgSas.Value}").ToArray();
+
+            string imgSas = await GetKvSas(keyVault, _azureStorageOptions.KeyVault.ImgSasDefinitionName);
+            string[] imageUrls = blobs.Select(blob => $"{blob.Uri}{imgSas}").ToArray();
 
             return View(imageUrls);
         }
@@ -63,6 +62,12 @@ namespace PGS.Azure.Storage.Controllers
             while (continuationToken != null);
 
             return result.ToArray();
+        }
+
+        private async Task<string> GetKvSas(KeyVaultClient kvClient, string sasDefinitionName)
+        {
+            SecretBundle secret = await kvClient.GetSecretAsync(_azureStorageOptions.KeyVault.BaseUrl, $"{_azureStorageOptions.AccountName}-{sasDefinitionName}");
+            return secret.Value;
         }
     }
 }

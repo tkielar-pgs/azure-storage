@@ -19,3 +19,5 @@ $managedStorageAccount = Add-AzureKeyVaultManagedStorageAccount -VaultName $keyV
 
 $sasDefinition = Set-AzureKeyVaultManagedStorageSasDefinition -AccountName $managedStorageAccount.AccountName -Container img -Name imgsas -Policy img-policy -VaultName $keyVault.VaultName
 
+$containerSasDefinition = Set-AzureKeyVaultManagedStorageSasDefinition -AccountName $managedStorageAccount.AccountName -Container img -Name imgcontainersas -Policy img-container-policy `
+    -VaultName $keyVault.VaultName
