@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.KeyVault;
 using Microsoft.Azure.KeyVault.Models;
+using Microsoft.Azure.Services.AppAuthentication;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Clients.ActiveDirectory;
 using Microsoft.WindowsAzure.Storage;
@@ -27,13 +28,7 @@ namespace PGS.Azure.Storage.Controllers
         // GET
         public async Task<IActionResult> Index()
         {
-            var keyVault = new KeyVaultClient(async (authority, resource, scope) =>
-            {
-                var authContext = new AuthenticationContext(authority);
-                var clientCred = new ClientCredential(_azureAdOptions.ClientId, _azureAdOptions.ClientSecret);
-                var result = await authContext.AcquireTokenAsync(resource, clientCred);
-                return result.AccessToken;
-            });
+            var keyVault = CreateKeyVaultClient();
 
             string containerSas = await GetKvSas(keyVault, _azureStorageOptions.KeyVault.ContainerSasDefinitionName);
             var account = new CloudStorageAccount(new StorageCredentials(containerSas), _azureStorageOptions.AccountName, "core.windows.net", true);       
@@ -46,6 +41,23 @@ namespace PGS.Azure.Storage.Controllers
             string[] imageUrls = blobs.Select(blob => $"{blob.Uri}{imgSas}").ToArray();
 
             return View(imageUrls);
+        }
+
+        private KeyVaultClient CreateKeyVaultClient()
+        {
+            if (string.IsNullOrWhiteSpace(_azureAdOptions.ClientId) || string.IsNullOrWhiteSpace(_azureAdOptions.ClientSecret))
+            {
+                var azureServiceTokenProvider = new AzureServiceTokenProvider();
+                return new KeyVaultClient(new KeyVaultClient.AuthenticationCallback(azureServiceTokenProvider.KeyVaultTokenCallback));
+            }
+
+            return new KeyVaultClient(async (authority, resource, scope) =>
+            {
+                var authContext = new AuthenticationContext(authority);
+                var clientCred = new ClientCredential(_azureAdOptions.ClientId, _azureAdOptions.ClientSecret);
+                var result = await authContext.AcquireTokenAsync(resource, clientCred);
+                return result.AccessToken;
+            });
         }
 
         private async Task<IListBlobItem[]> GetAllBlobs(CloudBlobContainer container)
